@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 
 namespace HttpNewsPAT
 {
@@ -24,6 +25,23 @@ namespace HttpNewsPAT
                 SetComand();
             }
         }
+        public static void ParsingHtml(string htmlCode)
+        {
+            HtmlDocument html = new HtmlDocument();
+            html.LoadHtml(htmlCode);
+            HtmlNode document = html.DocumentNode;
+            IEnumerable<HtmlNode> divsNews = document.Descendants().Where(n => n.HasClass("news"));
+            string content = "";
+            foreach (HtmlNode divNews in divsNews)
+            {
+                string src = divNews.ChildNodes[1].GetAttributeValue("src", "none");
+                string name = divNews.ChildNodes[3].InnerText;
+                string description = divNews.ChildNodes[5].InnerText;
+
+                content += $"{name}\nИзображение: {src}\nОписание: {description}\n";
+            }
+            Console.Write(content);
+        }
         public static async void AddNewPost()
         {
             if (!string.IsNullOrEmpty(Token))
@@ -39,7 +57,6 @@ namespace HttpNewsPAT
                 image = Console.ReadLine();
                 string url = "http://127.0.0.1/ajax/add.php";
                 WriteLog($"Выполнение запроса: {url}");
-
                 var postData = new FormUrlEncodedContent(new[]
                 {
                     new KeyValuePair<string, string>("name", name),
@@ -47,7 +64,6 @@ namespace HttpNewsPAT
                     new KeyValuePair<string, string>("src", image),
                     new KeyValuePair<string, string>("token", Token)
                 });
-
                 HttpResponseMessage response = await httpClient.PostAsync(url, postData);
                 WriteLog($"Статус выполнения: {response.StatusCode}");
                 if (response.IsSuccessStatusCode)
@@ -61,7 +77,7 @@ namespace HttpNewsPAT
             }
             else
             {
-                Console.WriteLine($"Ошибка выполнения запроса: не авторизован");
+                Console.WriteLine($"Ошибка выполнения запроса: пользователь не авторизован");
             }
         }
         public static void WriteLog(string debugContent)
@@ -69,10 +85,10 @@ namespace HttpNewsPAT
             Debug.WriteLine(debugContent);
             Debug.Flush();
         }
-        public static async Task<string> SignIn(string Login, string Password)
+        public static async Task SignIn(string Login, string Password)
         {
             string url = "http://127.0.0.1/ajax/login.php";
-            WriteLog($"Выполняем запрос: {url}");
+            WriteLog($"Выполнение запроса: {url}");
             var postData = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("login", Login),
@@ -87,7 +103,7 @@ namespace HttpNewsPAT
                 if (!string.IsNullOrEmpty(cookies))
                 {
                     Token = cookies.Split(';')[0].Split('=')[1];
-                    Console.WriteLine("токен: " + Token);
+                    Console.WriteLine("успешная авторизация");
                 }
             }
             else
@@ -103,7 +119,7 @@ namespace HttpNewsPAT
                 string url = "http://127.0.0.1/main";
                 WriteLog($"Выполнение запроса: {url}");
                 httpClient.DefaultRequestHeaders.Add("token", Token);
-                HttpResponseMessage response = await HttpClient.GetAsync(url);
+                HttpResponseMessage response = await httpClient.GetAsync(url);
                 WriteLog($"Статус выполнения: {response.StatusCode}");
                 if (response.IsSuccessStatusCode)
                 {
@@ -124,19 +140,19 @@ namespace HttpNewsPAT
         static void Help()
         {
             Console.Write("/SignIn");
-            Console.WriteLine("  - authorizes on the site");
-            Console.Write("/Content");
-            Console.WriteLine("  - get all news from site");
+            Console.WriteLine(" (авторизация на сайте)");
+            Console.Write("/Posts");
+            Console.WriteLine(" (вывод всех постов на сайте)");
             Console.Write("/AddPost");
-            Console.WriteLine("  - add new new");
+            Console.WriteLine(" (добавление новой записи)");
         }
         static async void SetComand()
         {
             try
             {
                 string Command = Console.ReadLine();
-                if (Command.Contains("/SignIn")) await SignIn("student", "Asdfg123");
-                if (Command.Contains("/Content")) ParsingHtml(await GetContent());
+                if (Command.Contains("/SignIn")) await SignIn("user", "user");
+                if (Command.Contains("/Posts")) ParsingHtml(await GetContent());
                 if (Command.Contains("/AddPost")) AddNewPost();
             }
             catch (Exception ex)
