@@ -24,14 +24,19 @@ namespace HttpNewsPAT
                 SetComand();
             }
         }
+        public static void WriteLog(string debugContent)
+        {
+            Debug.WriteLine(debugContent);
+            Debug.Flush();
+        }
         public static async Task<string> SingIn(string Login, string Password)
         {
             string url = "http://127.0.0.1/ajax/login.php";
             WriteLog($"Выполняем запрос: {url}");
             var postData = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("login", login),
-                new KeyValuePair<string, string>("password", password)
+                new KeyValuePair<string, string>("login", Login),
+                new KeyValuePair<string, string>("password", Password)
             });
 
             HttpResponseMessage response = await httpClient.PostAsync(url, postData);
