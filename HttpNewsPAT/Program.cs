@@ -12,43 +12,73 @@ namespace HttpNewsPAT
 {
     public class Program
     {
-        private static HttpClient _httpClient;
+        private static HttpClient httpClient = new HttpClient();
         private static string _cookie;
 
         static void Main(string[] args)
         {
-            WebRequest request = WebRequest.Create(" http://news.permaviat.ru/main ");
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            Console.WriteLine(response.StatusDescription);
-            Stream dataStream = response.GetResponseStream();
-            StreamReader reader = new StreamReader(dataStream);
-            string responseFromServer = reader.ReadToEnd();
-            Console.WriteLine(responseFromServer);
-            reader.Close();
-            dataStream.Close();
-            response.Close();
-            Console.Read();
+            Debug.Listeners.Add(new TextWriterTraceListener("DebugLog.txt"));
+            Help();
+            while (true)
+            {
+                SetComand();
+            }
         }
         public static async Task<string> SingIn(string Login, string Password)
         {
             string url = "http://127.0.0.1/ajax/login.php";
-            Trace.WriteLine($"Выполняем запрос: {url}");
-            var formData = new Dictionary<string, string>
+            WriteLog($"Выполняем запрос: {url}");
+            var postData = new FormUrlEncodedContent(new[]
             {
-                { "login", Login },
-                { "password", Password }
-            };
-            var content = new FormUrlEncodedContent(formData);
-            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
-            Trace.WriteLine($"Статус выполнения: {response.StatusCode}");
-            string responseFromServer = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Ответ сервера: {responseFromServer}");
-            if (response.Headers.TryGetValues("Set-Cookie", out var cookieValues))
+                new KeyValuePair<string, string>("login", login),
+                new KeyValuePair<string, string>("password", password)
+            });
+
+            HttpResponseMessage response = await httpClient.PostAsync(url, postData);
+            WriteLog($"Статус выполнения: {response.StatusCode}");
+            if (response.IsSuccessStatusCode)
             {
-                string cookie = cookieValues.FirstOrDefault();
-                return cookie;
+                string cookies = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+                if (!string.IsNullOrEmpty(cookies))
+                {
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Token = cookies.Split(';')[0].Split('=')[1];
+                    Console.WriteLine("Печенька: токен = " + Token);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                }
             }
-            return null;
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Ошибка выполнения запроса: {response.StatusCode}");
+            }
+        }
+        public static async Task<string> GetContent()
+        {
+            if (!string.IsNullOrEmpty(Token))
+            {
+                string url = "http://127.0.0.1/main";
+                WriteLog($"Выполняем запрос: {url}");
+                httpClient.DefaultRequestHeaders.Add("token", Token);
+                HttpResponseMessage response = await HttpClient.GetAsync(url);
+                WriteLog($"Статус выполнения: {response.StatusCode}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Ошибка выполнения запроса: {response.StatusCode}");
+                    return string.Empty;
+                }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Ошибка выполнения запроса: не авторизован");
+                return string.Empty;
+            }
         }
     }
 }
