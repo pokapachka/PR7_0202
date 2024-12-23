@@ -13,7 +13,7 @@ namespace HttpNewsPAT
     public class Program
     {
         private static HttpClient httpClient = new HttpClient();
-        private static string _cookie;
+        private static string Token;
 
         static void Main(string[] args)
         {
@@ -22,6 +22,46 @@ namespace HttpNewsPAT
             while (true)
             {
                 SetComand();
+            }
+        }
+        public static async void AddNewPost()
+        {
+            if (!string.IsNullOrEmpty(Token))
+            {
+                string name;
+                string description;
+                string image;
+                Console.WriteLine("Заголовок новости:");
+                name = Console.ReadLine();
+                Console.WriteLine("Текст новости");
+                description = Console.ReadLine();
+                Console.WriteLine("Ссылка на изображение:");
+                image = Console.ReadLine();
+                string url = "http://127.0.0.1/ajax/add.php";
+                WriteLog($"Выполнение запроса: {url}");
+
+                var postData = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("name", name),
+                    new KeyValuePair<string, string>("description", description),
+                    new KeyValuePair<string, string>("src", image),
+                    new KeyValuePair<string, string>("token", Token)
+                });
+
+                HttpResponseMessage response = await httpClient.PostAsync(url, postData);
+                WriteLog($"Статус выполнения: {response.StatusCode}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Запрос выполнен успешно");
+                }
+                else
+                {
+                    Console.WriteLine($"Ошибка выполнения запроса: {response.StatusCode}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Ошибка выполнения запроса: не авторизован");
             }
         }
         public static void WriteLog(string debugContent)
@@ -46,10 +86,8 @@ namespace HttpNewsPAT
                 string cookies = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
                 if (!string.IsNullOrEmpty(cookies))
                 {
-                    Console.ForegroundColor = ConsoleColor.White;
                     Token = cookies.Split(';')[0].Split('=')[1];
-                    Console.WriteLine("Печенька: токен = " + Token);
-                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("токен: " + Token);
                 }
             }
             else
@@ -63,7 +101,7 @@ namespace HttpNewsPAT
             if (!string.IsNullOrEmpty(Token))
             {
                 string url = "http://127.0.0.1/main";
-                WriteLog($"Выполняем запрос: {url}");
+                WriteLog($"Выполнение запроса: {url}");
                 httpClient.DefaultRequestHeaders.Add("token", Token);
                 HttpResponseMessage response = await HttpClient.GetAsync(url);
                 WriteLog($"Статус выполнения: {response.StatusCode}");
