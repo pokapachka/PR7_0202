@@ -69,7 +69,7 @@ namespace HttpNewsPAT
             Debug.WriteLine(debugContent);
             Debug.Flush();
         }
-        public static async Task<string> SingIn(string Login, string Password)
+        public static async Task<string> SignIn(string Login, string Password)
         {
             string url = "http://127.0.0.1/ajax/login.php";
             WriteLog($"Выполняем запрос: {url}");
@@ -111,16 +111,37 @@ namespace HttpNewsPAT
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Ошибка выполнения запроса: {response.StatusCode}");
                     return string.Empty;
                 }
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Ошибка выполнения запроса: не авторизован");
                 return string.Empty;
+            }
+        }
+        static void Help()
+        {
+            Console.Write("/SignIn");
+            Console.WriteLine("  - authorizes on the site");
+            Console.Write("/Content");
+            Console.WriteLine("  - get all news from site");
+            Console.Write("/AddPost");
+            Console.WriteLine("  - add new new");
+        }
+        static async void SetComand()
+        {
+            try
+            {
+                string Command = Console.ReadLine();
+                if (Command.Contains("/SignIn")) await SignIn("student", "Asdfg123");
+                if (Command.Contains("/Content")) ParsingHtml(await GetContent());
+                if (Command.Contains("/AddPost")) AddNewPost();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Request error: " + ex.Message);
             }
         }
     }
