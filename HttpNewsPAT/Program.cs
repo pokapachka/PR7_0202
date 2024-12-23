@@ -29,5 +29,26 @@ namespace HttpNewsPAT
             response.Close();
             Console.Read();
         }
+        public static async Task<string> SingIn(string Login, string Password)
+        {
+            string url = "http://127.0.0.1/ajax/login.php";
+            Trace.WriteLine($"Выполняем запрос: {url}");
+            var formData = new Dictionary<string, string>
+            {
+                { "login", Login },
+                { "password", Password }
+            };
+            var content = new FormUrlEncodedContent(formData);
+            HttpResponseMessage response = await _httpClient.PostAsync(url, content);
+            Trace.WriteLine($"Статус выполнения: {response.StatusCode}");
+            string responseFromServer = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Ответ сервера: {responseFromServer}");
+            if (response.Headers.TryGetValues("Set-Cookie", out var cookieValues))
+            {
+                string cookie = cookieValues.FirstOrDefault();
+                return cookie;
+            }
+            return null;
+        }
     }
 }
