@@ -37,7 +37,6 @@ namespace HttpNewsPAT
                 string src = divNews.ChildNodes[1].GetAttributeValue("src", "none");
                 string name = divNews.ChildNodes[3].InnerText;
                 string description = divNews.ChildNodes[5].InnerText;
-
                 content += $"{name}\nИзображение: {src}\nОписание: {description}\n";
             }
             Console.Write(content);
@@ -94,7 +93,6 @@ namespace HttpNewsPAT
                 new KeyValuePair<string, string>("login", Login),
                 new KeyValuePair<string, string>("password", Password)
             });
-
             HttpResponseMessage response = await httpClient.PostAsync(url, postData);
             WriteLog($"Статус выполнения: {response.StatusCode}");
             if (response.IsSuccessStatusCode)
